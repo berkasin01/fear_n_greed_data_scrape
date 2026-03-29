@@ -22,11 +22,24 @@ df["z_score_daily_change"] = (df["daily_change"] - df["daily_change"].mean()) / 
 #clean values na values change columns create
 df = df.dropna()
 
-# print("Combined value anomalies (|z| > 2):")
-# print(df[df["z_score_combined_val"].abs() > 2][["date","day_of_week", "combined_value", "z_score_combined_val"]])
-#
-# print("\nDaily change anomalies (|z| > 2):")
-# print(df[df["z_score_daily_change"].abs() > 2][["date", "day_of_week", "daily_change", "z_score_daily_change"]])
+df_combined_z_score = df[df["z_score_combined_val"].abs() > 2][
+    ["date", "day_of_week", "combined_value", "z_score_combined_val"]]
+c_val_counts = df_combined_z_score["day_of_week"].value_counts()
+# plt.bar(c_val_counts.index, c_val_counts.values)
+# plt.title("Z Score of Fear & Greed Per Score")
+# plt.xlabel("Day")
+# plt.ylabel("Count")
+# plt.show()
+
+df_daily_change_z_score = df[df["z_score_daily_change"].abs() > 2][
+    ["date", "day_of_week", "daily_change", "z_score_daily_change"]]
+print(df_daily_change_z_score)
+dc_val_counts = df_daily_change_z_score["day_of_week"].value_counts()
+# plt.bar(dc_val_counts.index, dc_val_counts.values)
+# plt.title("Z Score of Fear & Greed Per Change of Score")
+# plt.xlabel("Day")
+# plt.ylabel("Count")
+# plt.show()
 
 
 #IQR calculation
@@ -49,7 +62,20 @@ daily_upper = daily_iqr + daily_fence
 daily_lower = daily_iqr - daily_fence
 
 df["iqr_anomaly_combined"] = (df["combined_value"] < combined_lower) | (df["combined_value"] > combined_upper)
-df["iqr_anomaly_daily"] = (df["daily_change"] < daily_lower) | (df["daily_change"] > daily_upper)
+iqr_combined_anomalies = df[df["iqr_anomaly_combined"] == True]
+# iqr_c_val_counts = iqr_combined_anomalies["day_of_week"].value_counts()
+# plt.bar(iqr_c_val_counts.index, iqr_c_val_counts.values)
+# plt.title("IQR Combined Value Anomalies by Day of Week")
+# plt.xlabel("Day")
+# plt.ylabel("Count")
+# plt.show()
 
-print(f"Combined anomalies: {df['iqr_anomaly_combined'].sum()}")
-print(f"Daily change anomalies: {df['iqr_anomaly_daily'].sum()}")
+df["iqr_anomaly_daily"] = (df["daily_change"] < daily_lower) | (df["daily_change"] > daily_upper)
+iqr_daily_anomalies = df[df["iqr_anomaly_daily"] == True]
+iqr_d_val_counts = iqr_daily_anomalies["day_of_week"].value_counts()
+# plt.bar(iqr_d_val_counts.index, iqr_d_val_counts.values)
+# plt.title("IQR Daily Change Anomalies by Day of Week")
+# plt.xlabel("Day")
+# plt.ylabel("Count")
+# plt.show()
+
