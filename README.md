@@ -1,4 +1,4 @@
-# CNN Fear and Greed Index — Historical Data + Scraper
+# CNN Fear and Greed Index Data PreProcess, Anomaly Machine Learning Models
 
 Historical CNN Fear and Greed Index data from 2011 to present, with a Python scraper to keep it updated.
 
