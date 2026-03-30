@@ -5,17 +5,19 @@ from sklearn.linear_model import LogisticRegression
 from xgboost import XGBClassifier
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
 import matplotlib.pyplot as plt
+import numpy as np
 
 df = pd.read_csv("cnn_fear_and_greed_index.csv")
 df["date"] = pd.to_datetime(df["date"])
 df = df.sort_values("date")
+
 
 df["daily_change"] = df["combined_value"].diff()
 df["pct_change"] = df["combined_value"].pct_change() * 100
 df["rolling_mean_7"] = df["combined_value"].rolling(7).mean()
 df["rolling_std_7"] = df["combined_value"].rolling(7).std()
 df["distance_from_mean"] = df["combined_value"] - df["rolling_mean_7"]
-
+df = df.replace([np.inf, -np.inf], np.nan).dropna()
 
 df["target"] = (df["daily_change"].shift(-1) > 0).astype(int)
 df = df.dropna()
@@ -29,7 +31,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # Logistic Regression
 log_reg = LogisticRegression(random_state=42)
 log_reg.fit(X_train, y_train)
-log_pred = log_reg.predict(X_train)
+log_pred = log_reg.predict(X_test)
 
 # Random Forest
 rf = RandomForestClassifier(n_estimators=100, random_state=42)
