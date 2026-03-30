@@ -6,6 +6,7 @@ from xgboost import XGBClassifier
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.model_selection import cross_val_score
 
 df = pd.read_csv("cnn_fear_and_greed_index.csv")
 df["date"] = pd.to_datetime(df["date"])
@@ -25,7 +26,6 @@ df["distance_from_mean"] = df["combined_value"] - df["rolling_mean_7"]
 df["target"] = (df["daily_change"].shift(-1) > 0).astype(int)
 df = df.replace([np.inf, -np.inf], np.nan).dropna()
 
-# features WITH day of week
 features = ["daily_change", "pct_change", "rolling_mean_7", "rolling_std_7",
             "distance_from_mean", "combined_value",
             "day_Monday", "day_Tuesday", "day_Wednesday", "day_Thursday", "day_Friday"]
@@ -54,6 +54,10 @@ models = {"Logistic Regression": (log_reg, log_pred),
           "Random Forest": (rf, rf_pred),
           "XGBoost": (xgb, xgb_pred)}
 
+for name, model in [("Logistic Regression", log_reg), ("Random Forest", rf), ("XGBoost", xgb)]:
+    scores = cross_val_score(model, X, y, cv=5, scoring="roc_auc")
+    print(f"{name}: Mean AUC = {scores.mean():.3f} (+/- {scores.std():.3f})")
+
 for name, (model, preds) in models.items():
     print(f"\n{'='*40}")
     print(f"{name}")
@@ -77,7 +81,6 @@ plt.title("ROC Curves (with Day of Week)")
 plt.legend()
 plt.show()
 
-# Feature importance
 importance = rf.feature_importances_
 plt.figure(figsize=(10, 6))
 plt.barh(features, importance)
