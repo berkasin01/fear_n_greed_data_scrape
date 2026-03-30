@@ -1,10 +1,10 @@
-# CNN Fear and Greed Index - Anomaly Detection
+# CNN Fear and Greed Index - Anomaly Detection and Classification
 
-Historical CNN Fear and Greed Index data from 2011 to present with anomaly detection using statistical and ML methods.
+Historical CNN Fear and Greed Index data from 2011 to present with anomaly detection using statistical and ML methods, plus supervised classification to predict next-day market sentiment direction.
 
 ## What It Does
 
-Takes 15+ years of daily CNN Fear and Greed Index data (3968 rows) and runs four different anomaly detection methods to find unusual market sentiment days. The project covers data scraping, feature engineering, statistical analysis, and unsupervised ML.
+Takes 15+ years of daily CNN Fear and Greed Index data (3968 rows) and runs four different anomaly detection methods to find unusual market sentiment days. Then uses three supervised ML models to predict whether the index goes up or down the next day. The project covers data scraping, feature engineering, statistical analysis, unsupervised ML, and supervised classification.
 
 ## Data
 
@@ -16,9 +16,9 @@ Missing dates are market holidays or weekends.
 
 ## Feature Engineering
 
-From one column I built: daily change, percentage change, 7-day rolling mean, 7-day rolling standard deviation, distance from rolling mean, and day of week. These features feed into both the statistical and ML methods.
+From one column I built: daily change, percentage change, 7-day rolling mean, 7-day rolling standard deviation, distance from rolling mean, and day of week (one-hot encoded). These features feed into both the anomaly detection and classification models.
 
-## Methods and Results
+## Anomaly Detection Methods and Results
 
 Four anomaly detection approaches on the same dataset:
 
@@ -37,6 +37,22 @@ Four anomaly detection approaches on the same dataset:
 
 **DBSCAN** - the most selective. Only flags points that are completely alone in feature space with no nearby cluster. Found just 29 true outliers.
 
+## Supervised Classification
+
+Trained three models to predict whether the Fear and Greed index goes up or down the next day using the engineered features.
+
+| Model | AUC (Cross-Validated) | Accuracy |
+|-------|----------------------|----------|
+| Logistic Regression | 0.587 (+/- 0.019) | 58% |
+| Random Forest | 0.543 (+/- 0.020) | 54% |
+| XGBoost | 0.531 (+/- 0.007) | 54% |
+
+All three models barely beat random guessing (0.5 AUC). Logistic Regression performed the best, which tells you something: the simplest model winning means there is a weak linear signal but not enough complexity for tree-based models to exploit. Random Forest and XGBoost are likely overfitting to noise.
+
+I also tested adding day of week as a feature. It made basically no difference. Logistic Regression went from 0.571 to 0.572 AUC, Random Forest actually got worse. This lines up with the anomaly detection findings where IQR showed anomalies evenly spread across weekdays.
+
+The honest conclusion is that the Fear and Greed index has very weak predictive power for its own next-day direction. The index reflects current sentiment, it does not predict future sentiment. If it were predictive the market would price it in immediately.
+
 ## Key Findings
 
 - IQR found way more anomalies than Z-score. Makes sense because Z-score's mean and std get dragged by the extreme values it is trying to catch
@@ -44,6 +60,9 @@ Four anomaly detection approaches on the same dataset:
 - No clear day-of-week pattern for extreme fear/greed scores. Sustained extreme sentiment comes from broader market events not weekly cycles
 - DBSCAN was the most conservative, only flagging the most extreme outliers in multi dimensional feature space
 - Isolation Forest and DBSCAN both show Monday and Friday leading, suggesting bookend days of the trading week see more unusual activity
+- Supervised models all performed poorly, confirming the index is a lagging indicator not a predictive one
+- Day of week features added nothing to classification performance, consistent with the anomaly detection results
+- Logistic Regression beating Random Forest and XGBoost suggests there is no complex non-linear pattern to find in this data
 
 ## Usage
 
@@ -57,16 +76,21 @@ Run preprocessing and analysis:
 python data_preprocessing.py
 ```
 
-Run ML models:
+Run anomaly detection models:
 ```
 python ml_models.py
 ```
 
+Run classification models:
+```
+python predict_future_fear_n_greed.py
+```
+
 ## Requirements
 ```
-pip install pandas numpy matplotlib scikit-learn requests
+pip install pandas numpy matplotlib scikit-learn xgboost requests
 ```
 
 ## Why This Exists
 
-Most financial sentiment data is locked behind paid APIs or only available as a live snapshot. This repo gives you 15+ years of daily data for free plus shows how different anomaly detection methods compare on real financial data.
+Most financial sentiment data is locked behind paid APIs or only available as a live snapshot. This repo gives you 15+ years of daily data for free plus shows how different anomaly detection and classification methods perform on real financial data. Not every model works and that is the point. Knowing why something does not work is just as valuable as building something that does.
