@@ -11,18 +11,25 @@ df = pd.read_csv("cnn_fear_and_greed_index.csv")
 df["date"] = pd.to_datetime(df["date"])
 df = df.sort_values("date")
 
+# create day of week first, then dummies
+df["day_of_week"] = df["date"].dt.day_name()
+day_dummies = pd.get_dummies(df["day_of_week"], prefix="day")
+df = pd.concat([df, day_dummies], axis=1)
 
 df["daily_change"] = df["combined_value"].diff()
 df["pct_change"] = df["combined_value"].pct_change() * 100
 df["rolling_mean_7"] = df["combined_value"].rolling(7).mean()
 df["rolling_std_7"] = df["combined_value"].rolling(7).std()
 df["distance_from_mean"] = df["combined_value"] - df["rolling_mean_7"]
-df = df.replace([np.inf, -np.inf], np.nan).dropna()
 
 df["target"] = (df["daily_change"].shift(-1) > 0).astype(int)
-df = df.dropna()
+df = df.replace([np.inf, -np.inf], np.nan).dropna()
 
-features = ["daily_change", "pct_change", "rolling_mean_7", "rolling_std_7", "distance_from_mean", "combined_value"]
+# features WITH day of week
+features = ["daily_change", "pct_change", "rolling_mean_7", "rolling_std_7",
+            "distance_from_mean", "combined_value",
+            "day_Monday", "day_Tuesday", "day_Wednesday", "day_Thursday", "day_Friday"]
+
 X = df[features]
 y = df["target"]
 
@@ -55,7 +62,6 @@ for name, (model, preds) in models.items():
     print("Confusion Matrix:")
     print(confusion_matrix(y_test, preds))
 
-
 plt.figure(figsize=(10, 6))
 
 for name, (model, preds) in models.items():
@@ -67,6 +73,14 @@ for name, (model, preds) in models.items():
 plt.plot([0, 1], [0, 1], "k--", label="Random (0.5)")
 plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
-plt.title("ROC Curves")
+plt.title("ROC Curves (with Day of Week)")
 plt.legend()
+plt.show()
+
+# Feature importance
+importance = rf.feature_importances_
+plt.figure(figsize=(10, 6))
+plt.barh(features, importance)
+plt.title("Random Forest Feature Importance")
+plt.xlabel("Importance")
 plt.show()
